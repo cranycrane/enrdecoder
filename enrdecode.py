@@ -8,25 +8,25 @@ from eth_utils import to_hex, big_endian_to_int
 def decode_enr(enr_string):
     print(f"\n--- ENR: {enr_string[:20]}... ---")
 
-    # 1. Odstranění prefixu
+    # 1. Remove prefix
     if enr_string.startswith("enr:"):
         clean_enr = enr_string[4:]
     else:
         clean_enr = enr_string
 
-    # 2. Base64 URL dekódování (s ošetřením paddingu)
+    # 2. Base64 URL decode (with padding handling)
     try:
         padding = '=' * ((4 - len(clean_enr) % 4) % 4)
         enr_bytes = base64.urlsafe_b64decode(clean_enr + padding)
     except Exception as e:
-        print(f"Chyba při Base64 dekódování: {e}")
+        print(f"Base64 decode error: {e}")
         return
 
-    # 3. RLP Dekódování
+    # 3. RLP decoding
     try:
         elements = rlp.decode(enr_bytes)
     except Exception as e:
-        print(f"Chyba při RLP dekódování: {e}")
+        print(f"RLP decode error: {e}")
         return
 
     signature = to_hex(elements[0])
@@ -35,14 +35,14 @@ def decode_enr(enr_string):
     print(f"Signature: {signature[:10]}...")
     print(f"Sequence No: {seq}")
 
-    # 4. Parsování Key-Value párů
+    # 4. Parse key-value pairs
     data = {}
     for i in range(2, len(elements), 2):
         key = elements[i].decode('utf-8')
         value = elements[i + 1]
         data[key] = value
 
-    # 5. Výpis důležitých polí
+    # 5. Print important fields
     if 'id' in data:
         print(f"Scheme: {data['id'].decode('utf-8')}")
 
@@ -50,7 +50,7 @@ def decode_enr(enr_string):
         try:
             ip_addr = socket.inet_ntoa(data['ip'])
             print(f"IP Address: {ip_addr}")
-        except:
+        except Exception:
             print(f"IP Address: (raw) {to_hex(data['ip'])}")
 
     if 'tcp' in data:
@@ -76,16 +76,16 @@ def decode_enr(enr_string):
                 print(f"Fork hash:       {fork_hash}")
                 print(f"Next fork block: {next_fork}")
             else:
-                print(f"Nečekaný formát ForkID: {fork_id!r}")
+                print(f"Unexpected ForkID format: {fork_id!r}")
         else:
-            print(f"Nečekaný formát 'eth' položky: {eth_entry!r}")
+            print(f"Unexpected 'eth' entry format: {eth_entry!r}")
     else:
-        print("ENR neobsahuje 'eth' klíč")
+        print("ENR does not contain the 'eth' key")
 
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Použití:")
+        print("Usage:")
         print("  python3 enrdecode.py enr:-FDSjiog...")
         sys.exit(1)
 
